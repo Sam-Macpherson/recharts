@@ -82,7 +82,12 @@ const updateDepthOfTargets = (tree: any, curNode: any) => {
   }
 };
 
-const getNodesTree = ({ nodes, links }: SankeyData, width: number, nodeWidth: number): any => {
+const getNodesTree = (
+  { nodes, links }: SankeyData,
+  width: number,
+  nodeWidth: number,
+  allowFloatingTerminalNodes: boolean,
+): any => {
   const tree = nodes.map((entry: any, index: number) => {
     const result = searchTargetsAndSources(links, index);
 
@@ -108,7 +113,7 @@ const getNodesTree = ({ nodes, links }: SankeyData, width: number, nodeWidth: nu
     for (let i = 0, len = tree.length; i < len; i++) {
       const node = tree[i];
 
-      if (!node.targetNodes.length) {
+      if (!node.targetNodes.length && !allowFloatingTerminalNodes) {
         node.depth = maxDepth;
       }
       node.x = node.depth * childWidth;
@@ -260,6 +265,7 @@ const computeData = ({
   nodeWidth,
   nodePadding,
   sort,
+  allowFloatingTerminalNodes,
 }: {
   data: SankeyData;
   width: number;
@@ -268,12 +274,13 @@ const computeData = ({
   nodeWidth: number;
   nodePadding: number;
   sort: boolean;
+  allowFloatingTerminalNodes: boolean;
 }): {
   nodes: SankeyNode[];
   links: SankeyLink[];
 } => {
   const { links } = data;
-  const { tree } = getNodesTree(data, width, nodeWidth);
+  const { tree } = getNodesTree(data, width, nodeWidth, allowFloatingTerminalNodes);
   const depthTree = getDepthTree(tree);
   const newLinks = updateYOfTree(depthTree, height, nodePadding, links);
 
@@ -390,6 +397,8 @@ interface SankeyProps {
   onMouseLeave?: any;
 
   sort?: boolean;
+
+  allowFloatingTerminalNodes?: boolean;
 }
 
 type Props = SVGProps<SVGElement> & SankeyProps;
@@ -435,7 +444,8 @@ export class Sankey extends PureComponent<Props, State> {
   };
 
   static getDerivedStateFromProps(nextProps: Props, prevState: State): State {
-    const { data, width, height, margin, iterations, nodeWidth, nodePadding, sort } = nextProps;
+    const { data, width, height, margin, iterations, nodeWidth, nodePadding, sort, allowFloatingTerminalNodes } =
+      nextProps;
 
     if (
       data !== prevState.prevData ||
@@ -457,6 +467,7 @@ export class Sankey extends PureComponent<Props, State> {
         nodeWidth,
         nodePadding,
         sort,
+        allowFloatingTerminalNodes,
       });
 
       return {
